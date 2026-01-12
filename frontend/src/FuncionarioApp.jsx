@@ -1,10 +1,12 @@
+// ARQUIVO: frontend/src/FuncionarioApp.jsx
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Html5Qrcode } from 'html5-qrcode'; 
 import './Admin.css'; 
 
-// --- URL DE PRODUÇÃO ---
-const API_BASE_URL = 'https://coupon-sms-proejct-donpedro.onrender.com';
-// -----------------------
+// --- URL CORRIGIDA (BACKEND DEMO) ---
+const API_BASE_URL = 'https://backend-sms-demo.onrender.com';
+// ------------------------------------
 
 
 // --- Componente do Scanner (Gerencia a Câmera) ---
@@ -46,7 +48,7 @@ const QrCodeScanner = ({ onScanSuccess, onScanError }) => {
                 stopAndCallback(decodedText);
             },
             (errorMessage) => {
-                // Erro de leitura
+                // Erro de leitura frame a frame (ignorado para não poluir console)
             }
         ).catch((err) => {
             onScanError(`Erro ao iniciar a câmera: ${err.message}. Verifique as permissões.`);
@@ -90,6 +92,7 @@ const FuncionarioApp = () => {
     // --- Funções de Ajuda para Limpeza ---
     const stopScanner = () => {
         try {
+            // Tenta parar qualquer instância pendente
             const html5QrCodeCleanup = new Html5Qrcode("reader", { verbose: false });
             if (html5QrCodeCleanup.isScanning) {
                 html5QrCodeCleanup.stop().catch(err => console.log("Stop failed on cleanup", err));
@@ -183,7 +186,7 @@ const FuncionarioApp = () => {
     };
 
 
-    // --- Renderização (Mantida) ---
+    // --- Renderização (Tela de Login) ---
     if (!token) {
         return (
             <div className="admin-container login-form">
@@ -263,7 +266,7 @@ const FuncionarioApp = () => {
                         {validationResult.message}
                     </p>
                     {validationResult.nome && (
-                        <p className="result-info">Cliente: **{validationResult.nome}**</p>
+                        <p className="result-info">Cliente: <strong>{validationResult.nome}</strong></p>
                     )}
                 </div>
             )}
