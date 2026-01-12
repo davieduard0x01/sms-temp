@@ -1,13 +1,10 @@
-// ARQUIVO: backend/index.js (VERSÃO DEMO FINAL - SEM DEPENDÊNCIA DE TWILIO)
+// ARQUIVO: backend/index.js (VERSÃO DEMO FINAL - VALIDAÇÃO FLEXÍVEL)
 
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors'); 
 const { createClient } = require('@supabase/supabase-js');
 const { v4: uuidv4 } = require('uuid'); 
-
-// NOTA: Removemos a inicialização do Twilio para evitar erros de "username required"
-// const twilio = require('twilio'); <--- NÃO PRECISAMOS MAIS DISSO AQUI
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -25,7 +22,7 @@ app.use(cors({
 
 app.use(express.json());
 
-// INICIALIZAÇÃO DO SUPABASE (AINDA NECESSÁRIA)
+// INICIALIZAÇÃO DO SUPABASE
 const supabase = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -33,13 +30,19 @@ const supabase = createClient(
 
 // --- Funções de Ajuda ---
 const normalizePhoneNumber = (number) => {
+    // Remove tudo que não é número
     const digits = number.replace(/\D/g, '');
+    
+    // Se tiver 10 ou 11 dígitos começando com 1 (EUA), formata padrão +1
     if (digits.length === 11 && digits.startsWith('1')) { return `+${digits}`; }
-    if (digits.length === 10) { return `+1${digits}`; }
+    if (digits.length === 10 && digits.startsWith('1')) { return `+${digits}`; } // Assume user typed 1 + area code
+    if (digits.length === 10) { return `+1${digits}`; } // Assume US default without country code
+    
+    // Para outros casos (como BR), apenas adiciona o + na frente dos dígitos brutos
     return `+${digits}`; 
 };
 
-// ... (Middlewares de Autenticação mantidos) ...
+// ... (Middlewares de Autenticação) ...
 const authenticateAccess = async (req, res, next) => {
     const token = req.header('X-Auth-Token');
     if (!token) { return res.status(401).json({ message: 'Token ausente.' }); }
@@ -60,7 +63,7 @@ const requireAdmin = (req, res, next) => {
 
 
 // ----------------------------------------------------
-// --- ROTA DE CADASTRO DIRETO ---
+// --- ROTA DE CADASTRO DIRETO (VALIDAÇÃO CORRIGIDA) ---
 // ----------------------------------------------------
 
 app.post('/api/register-direct', async (req, res) => {
@@ -72,8 +75,9 @@ app.post('/api/register-direct', async (req, res) => {
     
     const normalizedNumber = normalizePhoneNumber(phone);
     
-    if (!normalizedNumber.startsWith('+') || normalizedNumber.length < 12) {
-        return res.status(400).json({ message: 'Número inválido. Use formato com DDD.' });
+    // >>> CORREÇÃO AQUI: Aceita números menores (min 8 dígitos) para facilitar testes <<<
+    if (!normalizedNumber.startsWith('+') || normalizedNumber.length < 9) {
+        return res.status(400).json({ message: 'Número inválido. Digite DDD + Número.' });
     }
 
     // 1. VERIFICA SE JÁ EXISTE
@@ -82,7 +86,7 @@ app.post('/api/register-direct', async (req, res) => {
         
         if (existingCupons && existingCupons.length > 0) {
             const cuponsValidos = existingCupons.filter(c => c.status_uso === 'NAO_UTILIZADO');
-            const cupomPrincipal = cuponsValidos.length > 0 ? cuponsValidos[0].coupon_uuid : existingCupons[0].coupon_uuid;
+            // const cupomPrincipal = cuponsValidos.length > 0 ? cuponsValidos[0].coupon_uuid : existingCupons[0].coupon_uuid;
 
             console.log(`[DEMO] Usuário encontrado: ${existingCupons[0].nome}`);
 
