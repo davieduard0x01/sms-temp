@@ -1,10 +1,13 @@
-// ARQUIVO: backend/index.js (VERSÃO DEMO - CADASTRO DIRETO SEM OTP)
+// ARQUIVO: backend/index.js (VERSÃO DEMO FINAL - SEM DEPENDÊNCIA DE TWILIO)
 
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors'); 
 const { createClient } = require('@supabase/supabase-js');
 const { v4: uuidv4 } = require('uuid'); 
+
+// NOTA: Removemos a inicialização do Twilio para evitar erros de "username required"
+// const twilio = require('twilio'); <--- NÃO PRECISAMOS MAIS DISSO AQUI
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -22,6 +25,7 @@ app.use(cors({
 
 app.use(express.json());
 
+// INICIALIZAÇÃO DO SUPABASE (AINDA NECESSÁRIA)
 const supabase = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -35,7 +39,7 @@ const normalizePhoneNumber = (number) => {
     return `+${digits}`; 
 };
 
-// ... (Middlewares de Autenticação mantidos para o Painel Admin) ...
+// ... (Middlewares de Autenticação mantidos) ...
 const authenticateAccess = async (req, res, next) => {
     const token = req.header('X-Auth-Token');
     if (!token) { return res.status(401).json({ message: 'Token ausente.' }); }
@@ -56,7 +60,7 @@ const requireAdmin = (req, res, next) => {
 
 
 // ----------------------------------------------------
-// --- ROTA DE CADASTRO DIRETO (SUBSTITUI O SEND-OTP) ---
+// --- ROTA DE CADASTRO DIRETO ---
 // ----------------------------------------------------
 
 app.post('/api/register-direct', async (req, res) => {
@@ -72,12 +76,11 @@ app.post('/api/register-direct', async (req, res) => {
         return res.status(400).json({ message: 'Número inválido. Use formato com DDD.' });
     }
 
-    // 1. VERIFICA SE JÁ EXISTE (Lógica original)
+    // 1. VERIFICA SE JÁ EXISTE
     try {
         const { data: existingCupons } = await supabase.from('leads_cupons').select('*').eq('telefone', normalizedNumber);
         
         if (existingCupons && existingCupons.length > 0) {
-            // USUÁRIO JÁ EXISTE: Retorna lista de cupons
             const cuponsValidos = existingCupons.filter(c => c.status_uso === 'NAO_UTILIZADO');
             const cupomPrincipal = cuponsValidos.length > 0 ? cuponsValidos[0].coupon_uuid : existingCupons[0].coupon_uuid;
 
@@ -91,7 +94,7 @@ app.post('/api/register-direct', async (req, res) => {
         }
     } catch (dbError) { return res.status(500).json({ message: 'Erro ao verificar usuário.' }); }
     
-    // 2. SE NÃO EXISTE, CADASTRA DIRETO (Pula etapa de OTP)
+    // 2. SE NÃO EXISTE, CADASTRA DIRETO
     const couponUUID = uuidv4(); 
     const registrationData = {
         coupon_uuid: couponUUID,
@@ -119,7 +122,7 @@ app.post('/api/register-direct', async (req, res) => {
 });
 
 
-// ... (Rotas de Login e Admin mantidas iguais para o painel funcionar) ...
+// ... (Rotas de Login e Admin mantidas) ...
 app.post('/auth/login', async (req, res) => {
     const { usuario, senha } = req.body;
     try {
@@ -151,5 +154,5 @@ app.get('/admin/leads', authenticateAccess, requireAdmin, async (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`Servidor DEMO (Direct) rodando na porta ${PORT}`);
+    console.log(`Servidor DEMO rodando na porta ${PORT}`);
 });
