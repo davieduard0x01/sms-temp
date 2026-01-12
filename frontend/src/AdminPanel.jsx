@@ -1,10 +1,10 @@
-// ARQUIVO: frontend/src/AdminPanel.jsx (CÓDIGO FINAL E COMPLETO)
+// ARQUIVO: frontend/src/AdminPanel.jsx (VERSÃO DEMO ATUALIZADA)
 
 import React, { useState, useEffect } from 'react';
 import './Admin.css'; 
 
-// >>> URL DE PRODUÇÃO CORRETA (RENDER) <<<
-const API_BASE_URL = 'https://coupon-sms-proejct-donpedro.onrender.com';
+// >>> URL DO BACKEND DEMO (CORRIGIDA) <<<
+const API_BASE_URL = 'https://backend-sms-demo.onrender.com';
 // --------------------------------------------------------
 
 // Função auxiliar para converter a lista de objetos para formato CSV
@@ -35,10 +35,9 @@ const convertToCSV = (data) => {
     return "\uFEFF" + csvContent; // Adiciona BOM para compatibilidade com Excel
 };
 
-// >>> NOVA FUNÇÃO: Limpar o número de telefone para ter apenas dígitos e o sinal de + <<<
+// Limpar o número de telefone para ter apenas dígitos e o sinal de +
 const cleanPhoneNumber = (phoneNumber) => {
     if (!phoneNumber) return '';
-    // Remove tudo que não for dígito e o sinal de '+'
     return phoneNumber.replace(/[^\d+]/g, ''); 
 };
 // --------------------------------------------------------------------------------------
@@ -49,7 +48,7 @@ const AdminPanel = () => {
     const [token, setToken] = useState(localStorage.getItem('adminToken') || '');
     const [nivelAcesso, setNivelAcesso] = useState(localStorage.getItem('adminNivel') || '');
     const [usuario, setUsuario] = useState('');
-    const [password, setPassword] = useState(''); // Estado para a senha
+    const [password, setPassword] = useState(''); 
     const [loginError, setLoginError] = useState('');
 
     // --- Estados do Dashboard ---
@@ -143,9 +142,6 @@ const AdminPanel = () => {
     const handleExportCSV = () => {
         if (cupons.length === 0) return;
 
-        // Ao exportar, podemos manter a formatação original ou usar a limpa se for o caso.
-        // Neste código, a função convertToCSV usa o valor do banco de dados (que esperamos estar formatado corretamente, ex: "+12673579920").
-        // Se precisar de limpeza também no CSV, precisaremos modificar o convertToCSV.
         const csv = convertToCSV(cupons);
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
@@ -153,7 +149,7 @@ const AdminPanel = () => {
         if (link.download !== undefined) { 
             const url = URL.createObjectURL(blob);
             link.setAttribute("href", url);
-            link.setAttribute("download", `leads_donpedro_${new Date().toISOString().slice(0, 10)}.csv`);
+            link.setAttribute("download", `leads_demo_${new Date().toISOString().slice(0, 10)}.csv`);
             link.style.visibility = 'hidden';
             document.body.appendChild(link);
             link.click();
@@ -168,7 +164,7 @@ const AdminPanel = () => {
         return (
             <div className="admin-container login-form">
                 <h2>Painel de Administração</h2>
-                <span className="brand-name">DONPEDRO Leads</span>
+                <span className="brand-name">DONPEDRO Demo</span>
                 <form onSubmit={handleLogin}>
                     <input
                         type="text"
@@ -183,7 +179,7 @@ const AdminPanel = () => {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
-                        autocomplete="off" 
+                        autoComplete="off" 
                     />
                     <button type="submit">Acessar Dashboard</button>
                     {loginError && <p className="login-error">{loginError}</p>}
@@ -196,27 +192,24 @@ const AdminPanel = () => {
     return (
         <div className="admin-container dashboard-panel">
             <header className="admin-header">
-                {/* BLOCO DE INFORMAÇÃO DO USUÁRIO E TÍTULO */}
                 <div className="admin-info-content">
-                    <h1>Dashboard de Leads e Cupons</h1>
-                    <p>Usuário logado: **{usuario}** ({nivelAcesso})</p>
+                    <h1>Dashboard (Versão Demo)</h1>
+                    <p>Usuário logado: <strong>{usuario}</strong> ({nivelAcesso})</p>
                 </div>
-                {/* BLOCO DE AÇÕES (EXPORTAR/SAIR) */}
                 <div className="admin-actions">
                     <button onClick={handleExportCSV} disabled={loadingData || cupons.length === 0} className="export-button">
-                        {cupons.length > 0 ? `EXPORTAR ${cupons.length} REGISTROS PARA CSV` : 'NENHUM DADO PARA EXPORTAR'}
+                        {cupons.length > 0 ? `EXPORTAR ${cupons.length} REGISTROS` : 'NENHUM DADO'}
                     </button>
                     <button onClick={handleLogout} className="logout-button">SAIR</button>
                 </div>
             </header>
-            <hr className="admin-separator" /> {/* Separador visual */}
+            <hr className="admin-separator" />
 
             {loadingData && <p className="loading-message">Carregando dados...</p>}
             {dataError && <p className="error-message">{dataError}</p>}
 
-            {/* Total de Cadastros (FORA da tabela, mas dentro do painel) */}
             {!loadingData && cupons.length > 0 && (
-                <p className="total-count">Total de Cadastros: **{cupons.length}**</p>
+                <p className="total-count">Total de Cadastros: <strong>{cupons.length}</strong></p>
             )}
 
             {!loadingData && cupons.length > 0 && (
@@ -236,7 +229,6 @@ const AdminPanel = () => {
                             {cupons.map((c) => (
                                 <tr key={c.coupon_uuid} className={`status-${c.status_uso.toLowerCase().replace('_', '-')}`}>
                                     <td data-label="Nome">{c.nome}</td>
-                                    {/* Aplica a função de limpeza no telefone */}
                                     <td data-label="Telefone">{cleanPhoneNumber(c.telefone)}</td>
                                     <td data-label="Endereço">{c.endereco}</td>
                                     <td data-label="Status Uso">{c.status_uso.replace('_', ' ')}</td>
