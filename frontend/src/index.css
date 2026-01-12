@@ -1,0 +1,24 @@
+:root {
+  /* Definições de cores que podem ser usadas globalmente */
+  --color-primary: #CC0000;
+  --color-secondary: #FFD700;
+  --color-text-dark: #333333;
+}
+
+/* Reset básico para garantir consistência entre navegadores */
+html {
+  line-height: 1.15; /* 1 */
+  -webkit-text-size-adjust: 100%; /* 2 */
+}
+
+body {
+  margin: 0;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  color: var(--color-text-dark);
+  background-color: #F8F8F8; /* Fundo principal da aplicação */
+}
+
+/* Garante que o conteúdo de texto seja herdado */
+h1, h2, h3, p {
+  margin: 0;
+}
